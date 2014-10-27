@@ -27,23 +27,33 @@
 #===============================================================================
 # 1. Initial error trap for number of arguments (must be four)
 #===============================================================================
-if [ ! $# == 6 ]; then
-    echo "$0 <Input file> <Min lat> <Max lat> <Min lon> <Max lon> <Local output path>"
+if [ ! $# == 9 ]; then
+    echo "$0 <Min lat> <Max lat> <Min lon> <Max lon> <Local output path>"
     exit
 fi
 
 #===============================================================================
 # 2. Store argument variables in local variables
 #===============================================================================
-InputFile="$1"
-MinLat="$2"
-MaxLat="$3"
-MinLon="$4"
-MaxLon="$5"
-OutputPath="$6"
+MinLat="$1"
+MaxLat="$2"
+MinLon="$3"
+MaxLon="$4"
+CESM_LE_BasePath="$5"
+CESM_AddPath="$6"
+OutputBasePath="$7"
+CESM_LEvar="$8"
+CESM_Domain="$9"
 
-cat $InputFile | awk -v AwkMinLat="$MinLat" -v AwkMaxLat="$MaxLat" -v AwkMinLon="$MinLon" \
+#===============================================================================
+# 3 Create the command to execute and run it
+#===============================================================================
+InputPath=$CESM_LE_BasePath$CESM_Domain$CESM_AddPath$CESM_LEvar
+ListCommand="ls -1 "$InputPath"/b.e11* > InputFile_"$CESM_LEvar
+bash -c "$ListCommand"
+
+OutputPath=$OutputBasePath$CESM_LEvar
+
+cat InputFile_"$CESM_LEvar" | awk -v AwkMinLat="$MinLat" -v AwkMaxLat="$MaxLat" -v AwkMinLon="$MinLon" \
     -v AwkMaxLon="$MaxLon" '{ print "ncks -O -d lat,"AwkMinLat","AwkMaxLat" -d lon,"AwkMinLon","AwkMaxLon" "$1" "$1}' | sed \
-    -e "s/\/glade\/p\/cesm0005\/CESM-CAM5-BGC-LE\/atm\/proc\/tseries\/daily\/PRECT\/b\.e11\./\~\/$OutputPath\/GB_subset_/2";
-     
-    
+    -e "s,"$InputPath","$OutputPath",2" | sed -e "s,b.e11,GBss.b.11,2" | sh;
